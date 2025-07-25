@@ -19,9 +19,26 @@ void main(List<String> args) {
   parser.addFlag('help', abbr: 'h', negatable: false);
   parser.addFlag('exit-if-changed', negatable: false);
   parser.addFlag('no-comments', negatable: false);
+  parser.addFlag('version', negatable: false, help: 'Muestra la versión del paquete');
   final argResults = parser.parse(args).arguments;
   if (argResults.contains('-h') || argResults.contains('--help')) {
     local_args.outputHelp();
+    exit(0);
+  }
+  if (argResults.contains('--version')) {
+    final currentPath = Directory.current.path;
+    final pubspecYamlFile = File('$currentPath/pubspec.yaml');
+    final pubspecYaml = loadYaml(pubspecYamlFile.readAsStringSync());
+    final version = pubspecYaml['version'];
+    String build = '';
+    try {
+      final buildFile = File('$currentPath/build.txt');
+      if (buildFile.existsSync()) {
+        build = buildFile.readAsStringSync().trim();
+      }
+    } catch (_) {}
+    stdout.writeln('import_sorter version: $version${build.isNotEmpty ? ' (build $build)' : ''}');
+    exit(0);
   }
 
   final currentPath = Directory.current.path;
