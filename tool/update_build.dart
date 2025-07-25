@@ -32,7 +32,31 @@ void main() async {
     exit(1);
   }
 
-  final buildFile = File('build.txt');
-  await buildFile.writeAsString(commitDate);
-  stdout.writeln('Build actualizado: $commitDate');
+  // Modifica el pubspec.yaml para actualizar la versión con el nuevo build
+final pubspecFile = File('pubspec.yaml');
+if (!pubspecFile.existsSync()) {
+  stderr.writeln('No se encontró pubspec.yaml');
+  exit(1);
+}
+
+final pubspecLines = await pubspecFile.readAsLines();
+final versionRegExp = RegExp(r'^version:\s*([0-9]+\.[0-9]+\.[0-9]+)(\+([0-9]+))?');
+bool versionFound = false;
+final newLines = pubspecLines.map((line) {
+  final match = versionRegExp.firstMatch(line);
+  if (match != null) {
+    versionFound = true;
+    final baseVersion = match.group(1);
+    return 'version: $baseVersion+$commitDate';
+  }
+  return line;
+}).toList();
+
+if (!versionFound) {
+  stderr.writeln('No se encontró el campo version en pubspec.yaml');
+  exit(1);
+}
+
+await pubspecFile.writeAsString(newLines.join('\n') + '\n');
+stdout.writeln('Versión actualizada: ${newLines.firstWhere((l) => l.startsWith("version:"))}');
 }

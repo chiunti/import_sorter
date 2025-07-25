@@ -26,20 +26,21 @@ void main(List<String> args) {
     exit(0);
   }
   if (argResults.contains('--version')) {
-    final currentPath = Directory.current.path;
-    final pubspecYamlFile = File('$currentPath/pubspec.yaml');
-    final pubspecYaml = loadYaml(pubspecYamlFile.readAsStringSync());
-    final version = pubspecYaml['version'];
-    String build = '';
-    try {
-      final buildFile = File('$currentPath/build.txt');
-      if (buildFile.existsSync()) {
-        build = buildFile.readAsStringSync().trim();
-      }
-    } catch (_) {}
-    stdout.writeln('import_sorter version: $version${build.isNotEmpty ? ' (build $build)' : ''}');
-    exit(0);
+  // Obtiene la ruta absoluta del ejecutable (bin/import_sorter.dart)
+  final scriptPath = Platform.script.toFilePath();
+  final binDir = File(scriptPath).parent;
+  // Sube un nivel para llegar al root del paquete
+  final packageRoot = binDir.parent;
+  final pubspecYamlFile = File('${packageRoot.path}/pubspec.yaml');
+  if (!pubspecYamlFile.existsSync()) {
+    stderr.writeln('No se encontró pubspec.yaml del paquete import_sorter');
+    exit(1);
   }
+  final pubspecYaml = loadYaml(pubspecYamlFile.readAsStringSync());
+  final version = pubspecYaml['version'];
+  stdout.writeln('import_sorter version: $version');
+  exit(0);
+}
 
   final currentPath = Directory.current.path;
   /*
@@ -153,7 +154,7 @@ void main(List<String> args) {
 
     final sortedFile = sort.sortImports(
         file.readAsLinesSync(), packageName, emojis, exitOnChange, noComments,
-        filePath: filePath,
+        // filePath: filePath,
         customOrder: customOrder,
     );
     if (!sortedFile.updated) {
