@@ -46,16 +46,37 @@ void main(List<String> args) {
 
   var emojis = false;
   var noComments = false;
+  var exitOnChange = false;
   final ignoredFiles = [];
+  List<String> customOrder = [];
 
-  // Reading from config in pubspec.yaml safely
+  // Determine which config file to use (in order of priority)
+  final configFile = File('$currentPath/.import_sorter.yaml').existsSync()
+      ? File('$currentPath/.import_sorter.yaml')
+      : File('$currentPath/import_sorter.yaml').existsSync()
+          ? File('$currentPath/import_sorter.yaml')
+          : File('$currentPath/pubspec.yaml');
+
+  // Read config if not ignored
   if (!argResults.contains('--ignore-config')) {
-    if (pubspecYaml.containsKey('import_sorter')) {
-      final config = pubspecYaml['import_sorter'];
+    final configContent = loadYaml(configFile.readAsStringSync());
+    final config = configContent['import_sorter'];
+
+    if (config != null && config is Map) {
       if (config.containsKey('emojis')) emojis = config['emojis'];
       if (config.containsKey('comments')) noComments = !config['comments'];
+      if (config.containsKey('exit_if_changed')) exitOnChange = config['exit_if_changed'];
       if (config.containsKey('ignored_files')) {
         ignoredFiles.addAll(config['ignored_files']);
+      }
+      if (config.containsKey('custom_order') && config['custom_order'] is List) {
+        // Process custom order, removing duplicates while preserving order
+        final seen = <String>{};
+        customOrder = (config['custom_order'] as List)
+            .map((e) => e.toString().trim())
+            .where((item) => item.isNotEmpty)
+            .where((item) => seen.add(item) || item == 'Blank' || item == 'Blank Line')
+            .toList();
       }
     }
   }
@@ -63,7 +84,7 @@ void main(List<String> args) {
   // Setting values from args
   if (!emojis) emojis = argResults.contains('-e');
   if (!noComments) noComments = argResults.contains('--no-comments');
-  final exitOnChange = argResults.contains('--exit-if-changed');
+  if (!exitOnChange) exitOnChange = argResults.contains('--exit-if-changed');
 
   // Getting all the dart files for the project
   final dartFiles = files.dartFiles(currentPath, args);
@@ -96,7 +117,10 @@ void main(List<String> args) {
     }
 
     final sortedFile = sort.sortImports(
-        file.readAsLinesSync(), packageName, emojis, exitOnChange, noComments);
+        file.readAsLinesSync(), packageName, emojis, exitOnChange, noComments,
+        filePath: filePath,
+        customOrder: customOrder,
+    );
     if (!sortedFile.updated) {
       continue;
     }

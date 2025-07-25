@@ -1,6 +1,47 @@
 // 🎯 Dart imports:
 import 'dart:io';
 
+/// Process custom order for imports
+List<String> _processCustomOrder(List<String> customOrder, List<String> defaultOrder) {
+  if (customOrder.isEmpty) {
+    // Add blank lines between sections in default order, except between Project and Relative
+    final result = <String>[];
+    for (var i = 0; i < defaultOrder.length; i++) {
+      // Don't add blank before the first section
+      if (i > 0) {
+        // Don't add blank between Project and Relative
+        if (!(defaultOrder[i - 1] == 'Project' && defaultOrder[i] == 'Relative')) {
+          result.add('Blank');
+        }
+      }
+      result.add(defaultOrder[i]);
+    }
+    return result;
+  }
+  
+  final result = <String>[];
+  final seen = <String>{};
+  
+  // Add custom order items first
+  for (final item in customOrder) {
+    final normalizedItem = item.trim();
+    if (normalizedItem == 'Blank' || normalizedItem == 'Blank Line') {
+      result.add(normalizedItem);
+    } else if (defaultOrder.contains(normalizedItem) && seen.add(normalizedItem)) {
+      result.add(normalizedItem);
+    }
+  }
+  
+  // Add any remaining default items that weren't in custom order
+  for (final item in defaultOrder) {
+    if (seen.add(item)) {
+      result.add(item);
+    }
+  }
+  
+  return result;
+}
+
 /// Sort the imports
 /// Returns the sorted file as a string at
 /// index 0 and the number of sorted imports
@@ -12,15 +53,27 @@ ImportSortData sortImports(
   bool exitIfChanged,
   bool noComments, {
   String? filePath,
+  List<String> customOrder = const [],
 }) {
-  String dartImportComment(bool emojis) =>
-      '//${emojis ? ' 🎯 ' : ' '}Dart imports:';
-  String flutterImportComment(bool emojis) =>
-      '//${emojis ? ' 🐦 ' : ' '}Flutter imports:';
-  String packageImportComment(bool emojis) =>
-      '//${emojis ? ' 📦 ' : ' '}Package imports:';
-  String projectImportComment(bool emojis) =>
-      '//${emojis ? ' 🌎 ' : ' '}Project imports:';
+  // Define default order and comments
+  const defaultOrder = ['Dart', 'Flutter', 'Package', 'Project', 'Relative'];
+  
+  // Process custom order
+  final effectiveOrder = _processCustomOrder(customOrder, defaultOrder);
+  
+  // Define section comments
+  String dartImportComment(bool emojis) => '//${emojis ? ' 🎯 ' : ' '}Dart imports:';
+  String flutterImportComment(bool emojis) => '//${emojis ? ' 🐦 ' : ' '}Flutter imports:';
+  String packageImportComment(bool emojis) => '//${emojis ? ' 📦 ' : ' '}Package imports:';
+  String projectImportComment(bool emojis) => '//${emojis ? ' 🌎 ' : ' '}Project imports:';
+  
+  // Map section names to their comments
+  final sectionComments = {
+    'Dart': dartImportComment(emojis),
+    'Flutter': flutterImportComment(emojis),
+    'Package': packageImportComment(emojis),
+    'Project': projectImportComment(emojis),
+  };
 
   final beforeImportLines = <String>[];
   final afterImportLines = <String>[];
@@ -101,40 +154,43 @@ ImportSortData sortImports(
 
   final sortedLines = <String>[...beforeImportLines];
 
-  // Adding content conditionally
+  // Add newline before first import section if there are any before-import lines
   if (beforeImportLines.isNotEmpty) {
     sortedLines.add('');
   }
-  if (dartImports.isNotEmpty) {
-    if (!noComments) sortedLines.add(dartImportComment(emojis));
-    dartImports.sort();
-    sortedLines.addAll(dartImports);
-  }
-  if (flutterImports.isNotEmpty) {
-    if (dartImports.isNotEmpty) sortedLines.add('');
-    if (!noComments) sortedLines.add(flutterImportComment(emojis));
-    flutterImports.sort();
-    sortedLines.addAll(flutterImports);
-  }
-  if (packageImports.isNotEmpty) {
-    if (dartImports.isNotEmpty || flutterImports.isNotEmpty) {
-      sortedLines.add('');
+  
+  // Process imports based on custom order
+  bool isFirstSection = true;
+  
+  for (final section in effectiveOrder) {
+    if (section == 'Dart' && dartImports.isNotEmpty) {
+      if (!noComments) sortedLines.add(sectionComments['Dart']!);
+      dartImports.sort();
+      sortedLines.addAll(dartImports);
+      isFirstSection = false;
+    } else if (section == 'Flutter' && flutterImports.isNotEmpty) {
+      if (!noComments) sortedLines.add(sectionComments['Flutter']!);
+      flutterImports.sort();
+      sortedLines.addAll(flutterImports);
+      isFirstSection = false;
+    } else if (section == 'Package' && packageImports.isNotEmpty) {
+      if (!noComments) sortedLines.add(sectionComments['Package']!);
+      packageImports.sort();
+      sortedLines.addAll(packageImports);
+      isFirstSection = false;
+    } else if (section == 'Project' && projectImports.isNotEmpty) {
+      if (!noComments) sortedLines.add(sectionComments['Project']!);
+      projectImports.sort();
+      sortedLines.addAll(projectImports);
+      isFirstSection = false;
+    } else if (section == 'Relative' && projectRelativeImports.isNotEmpty) {
+      projectRelativeImports.sort();
+      sortedLines.addAll(projectRelativeImports);
+      isFirstSection = false;
+    } else if (section == 'Blank' || section == 'Blank Line') {
+      if (!isFirstSection) sortedLines.add('');
+      isFirstSection = true; // Next non-blank section will be treated as first
     }
-    if (!noComments) sortedLines.add(packageImportComment(emojis));
-    packageImports.sort();
-    sortedLines.addAll(packageImports);
-  }
-  if (projectImports.isNotEmpty || projectRelativeImports.isNotEmpty) {
-    if (dartImports.isNotEmpty ||
-        flutterImports.isNotEmpty ||
-        packageImports.isNotEmpty) {
-      sortedLines.add('');
-    }
-    if (!noComments) sortedLines.add(projectImportComment(emojis));
-    projectImports.sort();
-    projectRelativeImports.sort();
-    sortedLines.addAll(projectImports);
-    sortedLines.addAll(projectRelativeImports);
   }
 
   sortedLines.add('');
