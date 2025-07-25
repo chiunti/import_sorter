@@ -32,8 +32,10 @@ Map<String, File> dartFiles(String currentPath, List<String> args) {
     final filesToKeep = <String, File>{};
 
     String normalizePath(String path) {
-      // Reemplaza separadores de Windows por Unix y elimina './' inicial
-      var norm = path.replaceAll('\\', '/');
+      // Convierte a absoluta si no lo es
+      final absolute = path.startsWith('/') || path.contains(':') ? path : File(path).absolute.path;
+      // Normaliza separadores
+      var norm = absolute.replaceAll('\\', '/');
       if (norm.startsWith('./')) norm = norm.substring(2);
       return norm;
     }
