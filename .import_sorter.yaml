@@ -1,14 +1,12 @@
 import_sorter:
-  emojis: true
-  comments: true
-  exit_if_changed: true
   custom_order:
     - Dart
+    - Blank
     - Flutter
+    - Blank
     - Package
     - Blank
     - Project
-    - Blank
     - Relative
   ignored_files:
     - 'test/**'
