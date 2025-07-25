@@ -143,7 +143,7 @@ void main(List<String> args) {
 
     final sortedFile = sort.sortImports(
         file.readAsLinesSync(), packageName, emojis, exitOnChange, noComments,
-        // filePath: filePath,
+        filePath: file.path,
         customOrder: customOrder,
     );
     if (!sortedFile.updated) {
