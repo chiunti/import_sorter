@@ -10,6 +10,7 @@ import 'package:yaml/yaml.dart';
 import 'package:import_sorter/args.dart' as local_args;
 import 'package:import_sorter/files.dart' as files;
 import 'package:import_sorter/sort.dart' as sort;
+import 'package:import_sorter/version.dart';
 
 void main(List<String> args) {
   // Parsing arguments
@@ -26,19 +27,7 @@ void main(List<String> args) {
     exit(0);
   }
   if (argResults.contains('--version')) {
-  // Obtiene la ruta absoluta del ejecutable (bin/import_sorter.dart)
-  final scriptPath = Platform.script.toFilePath();
-  final binDir = File(scriptPath).parent;
-  // Sube un nivel para llegar al root del paquete
-  final packageRoot = binDir.parent;
-  final pubspecYamlFile = File('${packageRoot.path}/pubspec.yaml');
-  if (!pubspecYamlFile.existsSync()) {
-    stderr.writeln('No se encontró pubspec.yaml del paquete import_sorter');
-    exit(1);
-  }
-  final pubspecYaml = loadYaml(pubspecYamlFile.readAsStringSync());
-  final version = pubspecYaml['version'];
-  stdout.writeln('import_sorter version: $version');
+  stdout.writeln('import_sorter version: ' + importSorterVersion);
   exit(0);
 }
 

@@ -59,4 +59,12 @@ if (!versionFound) {
 
 await pubspecFile.writeAsString(newLines.join('\n') + '\n');
 stdout.writeln('Versión actualizada: ${newLines.firstWhere((l) => l.startsWith("version:"))}');
+
+// Actualiza lib/version.dart con la versión
+final versionString = newLines.firstWhere((l) => l.startsWith('version:')).split(':').last.trim();
+final versionFile = File('lib/version.dart');
+await versionFile.writeAsString('''/// Archivo generado automáticamente. No editar manualmente.
+const String importSorterVersion = '$versionString';
+''');
+stdout.writeln('lib/version.dart actualizado.');
 }
