@@ -34,7 +34,7 @@ Map<String, File> dartFiles(String currentPath, List<String> args) {
     for (final fileName in dartFiles.keys) {
       var keep = false;
       for (final pattern in patterns) {
-        if (RegExp(pattern).hasMatch(fileName)) {
+        if (pattern == fileName || RegExp(pattern).hasMatch(fileName)) {
           keep = true;
           break;
         }
