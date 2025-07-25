@@ -143,7 +143,9 @@ void main(List<String> args) {
 
     final sortedFile = sort.sortImports(
         file.readAsLinesSync(), packageName, emojis, exitOnChange, noComments,
-        filePath: file.path,
+        filePath: file.path.startsWith(Directory.current.path)
+          ? file.path.substring(Directory.current.path.length + 1)
+          : file.path,
         customOrder: customOrder,
     );
     if (!sortedFile.updated) {
