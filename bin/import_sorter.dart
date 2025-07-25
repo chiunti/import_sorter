@@ -111,10 +111,16 @@ void main(List<String> args) {
   }
 
   for (final pattern in ignoredFiles) {
+    if (pattern == null || pattern.trim().isEmpty) continue;
     final regexPattern = globToRegExp(pattern);
-    dartFiles.removeWhere((key, _) =>
-        RegExp(regexPattern).hasMatch(key.replaceFirst(currentPath, '')));
+    try {
+      dartFiles.removeWhere((key, _) =>
+          RegExp(regexPattern).hasMatch(key.replaceFirst(currentPath, '')));
+    } catch (e) {
+      stderr.writeln('Advertencia: patrón glob inválido "$pattern". Error: $e');
+    }
   }
+
 
   stdout.write('┏━━ Sorting ${dartFiles.length} dart files');
 
