@@ -31,10 +31,19 @@ Map<String, File> dartFiles(String currentPath, List<String> args) {
     final patterns = args.where((arg) => !arg.startsWith('-'));
     final filesToKeep = <String, File>{};
 
+    String normalizePath(String path) {
+      // Reemplaza separadores de Windows por Unix y elimina './' inicial
+      var norm = path.replaceAll('\\', '/');
+      if (norm.startsWith('./')) norm = norm.substring(2);
+      return norm;
+    }
+
     for (final fileName in dartFiles.keys) {
       var keep = false;
+      final normFileName = normalizePath(fileName);
       for (final pattern in patterns) {
-        if (pattern == fileName || RegExp(pattern).hasMatch(fileName)) {
+        final normPattern = normalizePath(pattern);
+        if (normPattern == normFileName || RegExp(pattern).hasMatch(fileName)) {
           keep = true;
           break;
         }
@@ -48,6 +57,7 @@ Map<String, File> dartFiles(String currentPath, List<String> args) {
 
   return dartFiles;
 }
+
 
 List<FileSystemEntity> _readDir(String currentPath, String name) {
   if (Directory('$currentPath/$name').existsSync()) {
