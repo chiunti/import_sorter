@@ -99,9 +99,21 @@ void main(List<String> args) {
     dartFiles.remove('$currentPath/lib/generated_plugin_registrant.dart');
   }
 
+  String globToRegExp(String glob) {
+    // Escapa caracteres especiales de regex
+    String escaped = RegExp.escape(glob);
+    // Reemplaza los globs por sus equivalentes en regex
+    escaped = escaped.replaceAll(r'\*\*', '.*'); // '**' → '.*'
+    escaped = escaped.replaceAll(r'\*', '[^/]*'); // '*' → '[^/]*'
+    escaped = escaped.replaceAll(r'\?', '.'); // '?' → '.'
+    // Opcional: asegura coincidencia completa
+    return '^$escaped\$';
+  }
+
   for (final pattern in ignoredFiles) {
+    final regexPattern = globToRegExp(pattern);
     dartFiles.removeWhere((key, _) =>
-        RegExp(pattern).hasMatch(key.replaceFirst(currentPath, '')));
+        RegExp(regexPattern).hasMatch(key.replaceFirst(currentPath, '')));
   }
 
   stdout.write('┏━━ Sorting ${dartFiles.length} dart files');

@@ -1,0 +1,15 @@
+import_sorter:
+  emojis: true
+  comments: true
+  exit_if_changed: true
+  custom_order:
+    - Dart
+    - Flutter
+    - Package
+    - Blank
+    - Project
+    - Blank
+    - Relative
+  ignored_files:
+    - 'test/**'
+    - '**/*.g.dart'
