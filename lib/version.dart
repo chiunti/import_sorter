@@ -1,2 +1,2 @@
 /// Archivo generado automáticamente. No editar manualmente.
-const String importSorterVersion = '4.6.0+20250725160406';
+const String importSorterVersion = '4.6.0+20250725160927';

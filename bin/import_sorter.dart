@@ -20,8 +20,10 @@ void main(List<String> args) {
   parser.addFlag('help', abbr: 'h', negatable: false);
   parser.addFlag('exit-if-changed', negatable: false);
   parser.addFlag('no-comments', negatable: false);
+  parser.addFlag('all', negatable: false, help: 'Procesa todos los archivos .dart');
   parser.addFlag('version', negatable: false, help: 'Muestra la versión del paquete');
-  final argResults = parser.parse(args).arguments;
+  final parsed = parser.parse(args); // parsed es ArgResults
+  final argResults = parsed.arguments;
   if (argResults.contains('-h') || argResults.contains('--help')) {
     local_args.outputHelp();
     exit(0);
@@ -72,7 +74,7 @@ void main(List<String> args) {
     if (config != null && config is Map) {
       if (config.containsKey('emojis')) emojis = config['emojis'];
       if (config.containsKey('comments')) noComments = !config['comments'];
-      if (config.containsKey('exit_if_changed')) exitOnChange = config['exit_if_changed'];
+      // if (config.containsKey('exit_if_changed')) exitOnChange = config['exit_if_changed'];
       if (config.containsKey('ignored_files')) {
         ignoredFiles.addAll(config['ignored_files']);
       }
@@ -93,8 +95,17 @@ void main(List<String> args) {
   if (!noComments) noComments = argResults.contains('--no-comments');
   if (!exitOnChange) exitOnChange = argResults.contains('--exit-if-changed');
 
-  // Getting all the dart files for the project
-  final dartFiles = files.dartFiles(currentPath, args);
+  // Validación de argumentos para decidir qué archivos procesar
+  final bool allFlag = parsed['all'] == true;
+  final filesFromArgs = parsed.rest.where((a) => a.endsWith('.dart')).toList();
+
+  if (!allFlag && filesFromArgs.isEmpty) {
+    local_args.outputHelp();
+    exit(0);
+  }
+
+  // Obtener los archivos a procesar
+  final dartFiles = files.dartFiles(currentPath, allFlag ? [] : filesFromArgs);
   final containsFlutter = dependencies.contains('flutter');
   final containsRegistrant = dartFiles
       .containsKey('$currentPath/lib/generated_plugin_registrant.dart');
