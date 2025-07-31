@@ -1,4 +1,5 @@
 import_sorter:
+  emojis: true
   custom_order:
     - Dart
     - Blank
