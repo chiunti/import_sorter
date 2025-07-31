@@ -1,6 +1,6 @@
 name: import_sorter
 description: Automatically organize your dart imports
-version: 4.6.0+20250725160927
+version: 4.6.0+20250731092025
 repository: "https://github.com/fluttercommunity/import_sorter"
 homepage: "https://mattglei.ch"
 maintainer: Matthew Gleich (@gleich)
