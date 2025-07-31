@@ -193,7 +193,7 @@ ImportSortData sortImports(
     }
   }
 
-  sortedLines.add('');
+  if (!isFirstSection) sortedLines.add('');
 
   var addedCode = false;
   for (var j = 0; j < afterImportLines.length; j++) {

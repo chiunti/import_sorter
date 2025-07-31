@@ -22,6 +22,7 @@ void main(List<String> args) {
   parser.addFlag('no-comments', negatable: false);
   parser.addFlag('all', negatable: false, help: 'Procesa todos los archivos .dart');
   parser.addFlag('version', negatable: false, help: 'Muestra la versión del paquete');
+  parser.addFlag('sort-staged', negatable: false, help: 'Ordena solo los archivos staged en git');
   final parsed = parser.parse(args); // parsed es ArgResults
   final argResults = parsed.arguments;
   if (argResults.contains('-h') || argResults.contains('--help')) {
@@ -29,7 +30,7 @@ void main(List<String> args) {
     exit(0);
   }
   if (argResults.contains('--version')) {
-  stdout.writeln('import_sorter version: ' + importSorterVersion);
+  stdout.writeln('import_sorter version: $importSorterVersion');
   exit(0);
 }
 
@@ -97,15 +98,43 @@ void main(List<String> args) {
 
   // Validación de argumentos para decidir qué archivos procesar
   final bool allFlag = parsed['all'] == true;
+  final bool sortStagedFlag = parsed['sort-staged'] == true;
   final filesFromArgs = parsed.rest.where((a) => a.endsWith('.dart')).toList();
 
-  if (!allFlag && filesFromArgs.isEmpty) {
+  List<String> stagedFiles = [];
+  if (sortStagedFlag) {
+    // Obtener archivos staged de git
+    try {
+      final result = Process.runSync('git', ['diff', '--name-only', '--cached']);
+      if (result.exitCode == 0) {
+        stagedFiles = (result.stdout as String)
+            .split('\n')
+            .where((f) => f.trim().endsWith('.dart') && File(f.trim()).existsSync())
+            .map((f) => f.trim())
+            .toList();
+      } else {
+        stderr.writeln('No se pudieron obtener los archivos staged de git.');
+        exit(1);
+      }
+    } catch (e) {
+      stderr.writeln('Error ejecutando git: $e');
+      exit(1);
+    }
+    if (stagedFiles.isEmpty) {
+      stdout.writeln('No hay archivos .dart staged para ordenar.');
+      exit(0);
+    }
+  }
+
+  if (!allFlag && filesFromArgs.isEmpty && !sortStagedFlag) {
     local_args.outputHelp();
     exit(0);
   }
 
   // Obtener los archivos a procesar
-  final dartFiles = files.dartFiles(currentPath, allFlag ? [] : filesFromArgs);
+  final dartFiles = sortStagedFlag
+      ? files.dartFiles(currentPath, stagedFiles)
+      : files.dartFiles(currentPath, allFlag ? [] : filesFromArgs);
   final containsFlutter = dependencies.contains('flutter');
   final containsRegistrant = dartFiles
       .containsKey('$currentPath/lib/generated_plugin_registrant.dart');
